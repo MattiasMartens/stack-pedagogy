@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    </head>
+    <body>
+        <div id="app"></div>
+        <script>
+            new Vue({
+                el: "#app",
+                template: `
+                    <div>
+                        {{original}}
+                        {{digested}}
+                    </div>
+                `,
+                data() {
+                    return {
+                        original: null,
+                        digested: null
+                    };
+                },
+                mounted() {
+                    const fetchVersion = str => {
+                        const myRequest = new Request(str + '.md');
+                        fetch(myRequest).then((response) => response
+                            .text()
+                            .then(text => {
+                                this[str] = text;
+                            }))
+                    }
+
+                    fetchVersion('original');
+                    fetchVersion('digested');
+                }
+            });
+        </script>
+    </body>
+</html>
