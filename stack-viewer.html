@@ -28,12 +28,16 @@
                     },
                     digestedHtml() {
                         return this.digested && this.markdownToHtml(this.digested);
+                    },
+                    converter() {
+                        return new showdown.Converter({
+
+                        });
                     }
                 },
                 methods: {
                     markdownToHtml(markdown) {
-                        converter = new showdown.Converter();
-                        return converter.makeHtml(markdown);
+                        return this.converter.makeHtml(markdown);
                     }
                 },
                 mounted() {
