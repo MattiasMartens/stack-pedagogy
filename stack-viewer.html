@@ -9,10 +9,10 @@
             new Vue({
                 el: "#app",
                 template: `
-                    <div>
-                        <div v-html="originalHtml">
+                    <div id="app" class="row">
+                        <div class="column" id="digested" v-html="digestedHtml">
                         </div>
-                        <div v-html="digestedHtml">
+                        <div class="column" id="original" v-html="originalHtml">
                         </div>
                     </div>
                 `,
@@ -51,5 +51,15 @@
                 }
             });
         </script>
+        <style>
+            code {
+                display: none;
+            }
+
+            .column {
+                width: 50%;
+                float: left;
+            }
+        </style>
     </body>
 </html>
