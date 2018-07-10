@@ -6,37 +6,77 @@
     <body>
         <div id="app"></div>
         <script>
-            new Vue({
+            var vue = new Vue({
                 el: "#app",
                 template: `
                     <div id="app" class="row">
-                        <div class="column" id="digested" v-html="digestedHtml">
-                        </div>
-                        <div class="column" id="original" v-html="originalHtml">
+                        <div v-for="layer in layers" class="column" :id="layer" v-html="html[layer]">
                         </div>
                     </div>
                 `,
                 data() {
-                    return {
-                        original: null,
-                        digested: null
+                    const layers = ["digested", "original"];
+
+                    const data = {
+                        ids: new Set(),
+                        layers
                     };
+
+                    layers.forEach(layer => data[layer] = null);
+
+                    return data;
                 },
                 computed: {
-                    originalHtml() {
-                        return this.original && this.markdownToHtml(this.original);
-                    },
-                    digestedHtml() {
-                        return this.digested && this.markdownToHtml(this.digested);
+                    html() {
+                        debugger;
+                        return !this.layers.find(layer => !this[layer])
+                         && this.layers.reduce((acc, layer) => {
+                             acc[layer] = this.markdownToHtml(layer);
+                             return acc;
+                         }, {});
                     },
                     converter() {
-                        return new showdown.Converter({
-
+                        const converter = new showdown.Converter({
+                            noHeaderId: true
                         });
+
+                        const correlateExtension = {
+                            type: 'output',
+                            filter: (text, _, options) => {
+                                const versionName = options.versionName;
+                                const myRegexp = /(<h[1-7]>|<p>% )([^<]+)/g;
+                                return text.split('\n').map(line => {
+                                    let match = myRegexp.exec(line);
+                                    if (match) {
+                                        const innerText = match[2];
+                                        const id = `${versionName}-${innerText.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-")}`;
+                                        this.ids.add(id);
+                                        const matchType = match[1].includes("%") ? "p" : "h*";
+                                        if (matchType === "h*") {
+                                            return `
+                                                ${match[1].slice(0, match[1].length - 1)} class="concept-break" id="${id}">${match[2]}</${match[1].slice(1)}
+                                            `;
+                                        } else  {
+                                            return `
+                                                <span class="concept-break concept-break-invisible" id="${id}"></span>
+                                            `;
+                                        }
+                                    } else {
+                                        return line;
+                                    }
+                                }).join("\n");
+                            }
+                        };
+
+                        showdown.extension('correlate', correlateExtension);
+                        converter.addExtension('correlate');
+                        return converter;
                     }
                 },
                 methods: {
-                    markdownToHtml(markdown) {
+                    markdownToHtml(versionName) {
+                        const markdown = this[versionName];
+                        this.converter.setOption('versionName', versionName);
                         return this.converter.makeHtml(markdown);
                     }
                 },
