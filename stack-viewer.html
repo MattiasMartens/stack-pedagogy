@@ -10,7 +10,6 @@
                 el: "#app",
                 template: `
                     <div id="app" class="row">
-                        <svg id="lines" />
                         <div v-for="layer in layers" class="column" :ref="layer" :id="layer" v-html="html[layer]">
                         </div>
                     </div>
@@ -121,7 +120,7 @@
                             return template.content.firstChild; 
                         }
 
-                        const drawHorizontalLineBetween = (domLeft, domRight, colour) => {
+                        const getHorizontalLineSvgNode = (domLeft, domRight, colour) => {
                             const rectLeft = domLeft.getBoundingClientRect();
                             const rectRight = domRight.getBoundingClientRect();
                             const x1 = rectLeft.x + rectLeft.width - window.scrollX;
@@ -129,21 +128,25 @@
                             const x2 = rectRight.x - window.scrollX;
                             const y2 = rectRight.y + (rectRight.height / 2) - window.scrollY;
 
-                            const childSvg = textToDomNode(`
-                                <svg viewBox="0 0 ${document.body.scrollWidth} ${document.body.scrollHeight}" style="position: absolute; top: 0; left: 0;" xmlns="http://www.w3.org/2000/svg">
-                                    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colour}" />
-                                </svg>
-                            `);
-
-                            document.body.appendChild(childSvg);
+                            return _makeSvg("line", {
+                                x1, y1, x2, y2, stroke: colour
+                            });
                         };
+
+                        const svgNode = textToDomNode(`<svg viewBox="0 0 ${document.body.scrollWidth} ${document.body.scrollHeight}" style="position: absolute; top: 0; left: 0;" xmlns="http://www.w3.org/2000/svg">
+                            </svg>`);
 
                         for (let [concept, domElementsByLayer] of Object.entries(domElementsByConcept)) {
                             const colour = colorCodedConcepts[concept];
-                            for (let i = 0; i < this.layers.length - 1; i++) {
-                                drawHorizontalLineBetween(domElementsByLayer[this.layers[i]], domElementsByLayer[this.layers[i + 1]], colour);
-                            }
+                            
+                            const lineNodes = new Array(this.layers.length - 1).fill(0).map((_, i) =>
+                                getHorizontalLineSvgNode(domElementsByLayer[this.layers[i]], domElementsByLayer[this.layers[i + 1]], colour)
+                            );
+
+                            lineNodes.forEach(n => svgNode.appendChild(n));
                         }
+
+                        document.body.appendChild(svgNode);
                     }
                 },
                 mounted() {
@@ -200,6 +203,14 @@
                 return brightness < 200 && brightness > 150;
             }
             const _availableColours = _colourCodes.filter(brightnessGateFilter);
+
+            function _makeSvg(tag, attrs) {
+                const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+                for (let [k, v] of Object.entries(attrs))
+                    el.setAttribute(k, v);
+                return el;
+            }
+
         </script>
     </body>
 </html>
