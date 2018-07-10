@@ -18,7 +18,7 @@
                     const layers = ["digested", "original"];
 
                     const data = {
-                        ids: new Set(),
+                        concepts: new Set(),
                         layers
                     };
 
@@ -50,8 +50,8 @@
                                     if (match) {
                                         const innerText = match[2];
                                         const dataAttribute = innerText.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-");
+                                        this.concepts.add(dataAttribute);
                                         const id = `${versionName}-${dataAttribute}`;
-                                        this.ids.add(id);
                                         const matchType = match[1].includes("%") ? "p" : "h*";
                                         if (matchType === "h*") {
                                             return `
