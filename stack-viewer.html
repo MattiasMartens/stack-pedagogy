@@ -49,16 +49,19 @@
                                     let match = myRegexp.exec(line);
                                     if (match) {
                                         const innerText = match[2];
-                                        const id = `${versionName}-${innerText.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-")}`;
+                                        const dataAttribute = innerText.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-");
+                                        const id = `${versionName}-${dataAttribute}`;
                                         this.ids.add(id);
                                         const matchType = match[1].includes("%") ? "p" : "h*";
                                         if (matchType === "h*") {
                                             return `
-                                                ${match[1].slice(0, match[1].length - 1)} class="concept-break" id="${id}">${match[2]}</${match[1].slice(1)}
+                                                ${match[1].slice(0, match[1].length - 1)} class="concept-break" data-concept="${dataAttribute}" id="${id}">
+                                                    ${match[2]}
+                                                </${match[1].slice(1)}
                                             `;
                                         } else  {
                                             return `
-                                                <span class="concept-break concept-break-invisible" id="${id}"></span>
+                                                <span class="concept-break concept-break-invisible" data-concept="${dataAttribute}" id="${id}"></span>
                                             `;
                                         }
                                     } else {
