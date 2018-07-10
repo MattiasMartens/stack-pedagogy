@@ -10,7 +10,7 @@
                 el: "#app",
                 template: `
                     <div id="app" class="row">
-                        <div v-for="layer in layers" class="column" :id="layer" v-html="html[layer]">
+                        <div v-for="layer in layers" class="column" :ref="layer" :id="layer" v-html="html[layer]">
                         </div>
                     </div>
                 `,
@@ -28,12 +28,17 @@
                 },
                 computed: {
                     html() {
-                        debugger;
-                        return !this.layers.find(layer => !this[layer])
-                         && this.layers.reduce((acc, layer) => {
-                             acc[layer] = this.markdownToHtml(layer);
-                             return acc;
-                         }, {});
+                        if (this.layers.find(layer => !this[layer])) {
+                            return {};
+                        } else {
+                            Vue.nextTick()
+                                .then(this.handleHtmlLoaded);
+
+                            return this.layers.reduce((acc, layer) => {
+                                acc[layer] = this.markdownToHtml(layer);
+                                return acc;
+                            }, {});
+                        }
                     },
                     converter() {
                         const converter = new showdown.Converter({
@@ -53,6 +58,8 @@
                                         this.concepts.add(dataAttribute);
                                         const id = `${versionName}-${dataAttribute}`;
                                         const matchType = match[1].includes("%") ? "p" : "h*";
+                                        // TODO support a syntax to override the "concept" attribute for a heading (could be e.g. "## text %% concept")
+                                        // TODO wrap concepts in an enclosing tag for better styling
                                         if (matchType === "h*") {
                                             return `
                                                 ${match[1].slice(0, match[1].length - 1)} class="concept-break" data-concept="${dataAttribute}" id="${id}">
@@ -81,6 +88,29 @@
                         const markdown = this[versionName];
                         this.converter.setOption('versionName', versionName);
                         return this.converter.makeHtml(markdown);
+                    },
+                    randomColor() {
+                        return `rgb(${(new Array(3)).fill(0).map(() => Math.floor(Math.random() * 255)).join(",")})`;
+                    },
+                    handleHtmlLoaded() {
+                        // POC: connect concept breaks between versions using SVG lines
+                        const domElementsByConcept = Array.from(this.concepts).reduce((acc, concept) => {
+                            const domElementsByLayer = this.layers.reduce((acc, layer) => {
+                                const element = this.$refs[layer][0].querySelector(`[data-concept='${concept}'`);
+                                if (Array.from(element.classList).includes("concept-break-invisible")) {
+                                    acc[layer] = element.nextElementSibling;
+                                } else {
+                                    acc[layer] = element;
+                                }
+
+                                acc[layer].style.outline = `solid 1px ${this.randomColor()}`;
+
+                                return acc;
+                            }, {});
+
+                            acc[concept] = domElementsByLayer;
+                            return acc;
+                        }, {});
                     }
                 },
                 mounted() {
@@ -106,6 +136,11 @@
             .column {
                 width: 50%;
                 float: left;
+            }
+
+            .column :-webkit-any(h1,h2,h3,h4,h5,h6,h7,p) {
+                max-width: 100%;
+                width: fit-content;
             }
         </style>
     </body>
