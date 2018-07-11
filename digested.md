@@ -2,7 +2,7 @@
 
 Paragraph 1
 
-Paragraph 11
+Paragraph 11 ^% II
 
 Paragraph 111
 
@@ -12,7 +12,7 @@ Paragraph 1111
 
 Paragraph 1111.5
 
-% I
+^% I
 
 Paragraph 11111
 

@@ -2,7 +2,7 @@
 
 Paragraph 1
 
-Paragraph 2
+Paragraph 2 ^% II
 
 Paragraph 3
 
@@ -10,7 +10,7 @@ Paragraph 3
 
 Paragraph 4
 
-% I
+^% I
 
 Paragraph 5
 

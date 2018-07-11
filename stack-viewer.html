@@ -49,28 +49,45 @@
                             type: 'output',
                             filter: (text, _, options) => {
                                 const versionName = options.versionName;
-                                const myRegexp = /(<h[1-7]>|<p>% )([^<]+)/g;
+                                const invisibleConceptBreakRegexp = /<p>\^% (.*)<\/p>/g;
+                                const visibleConceptBreakRegexp = /<([a-z0-9]+)>(.*)\^% (.*)<\/\1>/g;
+                                const headerRegexp = /<(h[1-7])>(.*)<\/\1>/g;
+
+                                const getDataAttribute = str => str.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-");
+                                const getId = str => `${versionName}-${str}`;
+
                                 return text.split('\n').map(line => {
-                                    let match = myRegexp.exec(line);
-                                    if (match) {
-                                        const innerText = match[2];
-                                        const dataAttribute = innerText.trim().toLowerCase().replace(/[^a-zA-Z0-9]/g, "").replace(" ", "-");
+                                    let match;
+                                    if ((match = invisibleConceptBreakRegexp.exec(line))) {
+                                        const innerText = match[1];
+                                        const dataAttribute = getDataAttribute(innerText);
                                         this.concepts.add(dataAttribute);
-                                        const id = `${versionName}-${dataAttribute}`;
-                                        const matchType = match[1].includes("%") ? "p" : "h*";
-                                        // TODO support a syntax to override the "concept" attribute for a heading (could be e.g. "## text %% concept")
-                                        // TODO wrap concepts in an enclosing tag for better styling
-                                        if (matchType === "h*") {
-                                            return `
-                                                ${match[1].slice(0, match[1].length - 1)} class="concept-break" data-concept="${dataAttribute}" id="${id}">
-                                                    ${match[2]}
-                                                </${match[1].slice(1)}
-                                            `;
-                                        } else  {
-                                            return `
-                                                <span class="concept-break concept-break-invisible" data-concept="${dataAttribute}" id="${id}"></span>
-                                            `;
-                                        }
+                                        const id = getId(dataAttribute);
+
+                                        return `
+                                            <span class="concept-break concept-break-invisible" data-concept="${dataAttribute}" id="${id}"></span>
+                                        `;
+                                    } else if ((match = visibleConceptBreakRegexp.exec(line))) {
+                                        const conceptText = match[3];
+                                        const dataAttribute = getDataAttribute(conceptText);
+                                        this.concepts.add(dataAttribute);
+                                        const id = getId(dataAttribute);
+                                        const tagName = match[1];
+                                        const innerText = match[2];
+
+                                        return `
+                                            <${tagName} class="concept-break" data-concept="${dataAttribute}" id="${id}">${innerText}</${tagName}>
+                                        `;
+                                    } else if ((match = headerRegexp.exec(line))) {
+                                        const innerText = match[2];
+                                        const dataAttribute = getDataAttribute(innerText);
+                                        this.concepts.add(dataAttribute);
+                                        const id = getId(dataAttribute);
+                                        const tagName = match[1];
+
+                                        return `
+                                            <${tagName} class="concept-break" data-concept="${dataAttribute}" id="${id}">${innerText}</${tagName}>
+                                        `;
                                     } else {
                                         return line;
                                     }
@@ -165,6 +182,10 @@
             });
         </script>
         <style>
+            body {
+                font-family: sans-serif;
+            }
+
             code {
                 display: none;
             }
